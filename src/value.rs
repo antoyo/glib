@@ -76,6 +76,8 @@ use std::marker::PhantomData;
 use std::mem;
 use std::ops::{Deref, DerefMut};
 use std::ffi::CStr;
+use std::ptr;
+use libc::c_void;
 
 use object::{Downcast, IsA, Object};
 use translate::*;
@@ -151,7 +153,7 @@ impl Value {
         }
     }
 
-    fn into_raw(mut self) -> gobject_ffi::GValue {
+    pub fn into_raw(mut self) -> gobject_ffi::GValue {
         unsafe {
             let ret = mem::replace(&mut self.0, mem::uninitialized());
             mem::forget(self);
@@ -239,6 +241,30 @@ impl<'a> ToGlibPtr<'a, *mut gobject_ffi::GValue> for &'a [&'a ToValue] {
             .map(|v| v.to_value().into_raw())
             .collect();
         Stash(values.as_mut_ptr(), ValueArray(values))
+    }
+}
+
+impl FromGlibPtrNone<*const gobject_ffi::GValue> for Value {
+    unsafe fn from_glib_none(ptr: *const gobject_ffi::GValue) -> Self {
+        let mut ret = Value::uninitialized();
+        gobject_ffi::g_value_init(ret.to_glib_none_mut().0, (*ptr).g_type);
+        gobject_ffi::g_value_copy(ptr, ret.to_glib_none_mut().0);
+        ret
+    }
+}
+
+impl FromGlibPtrNone<*mut gobject_ffi::GValue> for Value {
+    unsafe fn from_glib_none(ptr: *mut gobject_ffi::GValue) -> Self {
+        from_glib_none(ptr as *const _)
+    }
+}
+
+impl FromGlibPtrFull<*mut gobject_ffi::GValue> for Value {
+    unsafe fn from_glib_full(ptr: *mut gobject_ffi::GValue) -> Self {
+        let mut ret = Value::uninitialized();
+        ptr::swap(&mut ret.0, ptr);
+        glib_ffi::g_free(ptr as *mut c_void);
+        ret
     }
 }
 
