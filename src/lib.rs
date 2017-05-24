@@ -170,6 +170,7 @@ pub mod shared;
 #[macro_use]
 pub mod object;
 
+pub use closure::Closure;
 pub use auto::*;
 mod auto;
 
