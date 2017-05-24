@@ -1,3 +1,4 @@
+
 // Copyright 2013-2016, The Gtk-rs Project Developers.
 // See the COPYRIGHT file at the top-level directory of this distribution.
 // Licensed under the MIT license, see the LICENSE file or <http://opensource.org/licenses/MIT>
@@ -153,6 +154,7 @@ impl Value {
         }
     }
 
+    #[doc(hidden)]
     pub fn into_raw(mut self) -> gobject_ffi::GValue {
         unsafe {
             let ret = mem::replace(&mut self.0, mem::uninitialized());
@@ -165,10 +167,8 @@ impl Value {
 impl Clone for Value {
     fn clone(&self) -> Self {
         unsafe {
-            // FIXME: make this safer by making GValue::g_type public
-            let type_ = *(&self.0 as *const gobject_ffi::GValue as *const glib_ffi::GType);
             let mut ret = Value::uninitialized();
-            gobject_ffi::g_value_init(ret.to_glib_none_mut().0, type_);
+            gobject_ffi::g_value_init(ret.to_glib_none_mut().0, self.0.g_type);
             gobject_ffi::g_value_copy(self.to_glib_none().0, ret.to_glib_none_mut().0);
             ret
         }
