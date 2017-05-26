@@ -73,8 +73,7 @@ impl Closure {
         }
         if result.type_() == Type::Invalid {
             None
-        }
-        else {
+        } else {
             Some(result)
         }
     }
